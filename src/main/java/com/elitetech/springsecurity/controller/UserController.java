@@ -1,0 +1,123 @@
+
+package com.elitetech.springsecurity.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.web.bind.annotation.*;
+
+import com.elitetech.springsecurity.dto.UserDTO;
+import com.elitetech.springsecurity.entity.AuthRequest;
+import com.elitetech.springsecurity.entity.UserInfo;
+import com.elitetech.springsecurity.service.JwtService;
+import com.elitetech.springsecurity.service.UserInfoService;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@RestController
+@RequestMapping("/auth")
+public class UserController {
+
+    @Autowired
+    private UserInfoService userInfoService;
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private JwtService jwtService;
+
+    @GetMapping("/welcome")
+    public ResponseEntity<String> welcome() {
+        return ResponseEntity.ok("Welcome to Spring Security tutorials !!");
+    }
+
+    @PostMapping("/add")
+    public ResponseEntity<UserInfo> addUser(@RequestBody UserInfo userInfo) {
+        // Assigner le rôle par défaut si aucun rôle n'est spécifié
+        if (userInfo.getRoles() == null || userInfo.getRoles().isEmpty()) {
+            userInfo.setRoles("USER_ROLE");
+        }
+        return ResponseEntity.ok(userInfoService.addUser(userInfo));
+    }
+
+
+    @PostMapping("/login")
+    public ResponseEntity<String> login(@RequestBody AuthRequest authRequest) {
+        try {
+            System.out.println("Authenticating user: " + authRequest.getUserName());
+
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(authRequest.getUserName(), authRequest.getPassword()));
+
+            if (authentication.isAuthenticated()) {
+                UserInfo user = userInfoService.getUserByEmail(authRequest.getUserName());
+                if (user != null) {
+                    // Parse roles from the comma-separated string
+                    Set<String> roleNames = Arrays.stream(user.getRoles().split(","))
+                                                  .map(String::trim)
+                                                  .collect(Collectors.toSet());
+
+                    // Generate JWT token
+                    String token = jwtService.generateToken(user.getEmail(), user.getId(), roleNames);
+                    System.out.println("Token generated for user: " + user.getEmail());
+                    return ResponseEntity.ok(token);
+                } else {
+                    System.out.println("Invalid user request: user not found");
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid user request");
+                }
+            } else {
+                System.out.println("Invalid credentials provided");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+            }
+        } catch (UsernameNotFoundException e) {
+            System.out.println("Authentication failed: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found");
+        }
+    }
+
+
+    @PostMapping("/refresh-token")
+    public ResponseEntity<String> refreshToken(@RequestHeader("Authorization") String token) {
+        try {
+            // Supprime le préfixe "Bearer " si présent
+            token = token.startsWith("Bearer") ? token.substring(7) : token;
+
+            String refreshedToken = jwtService.refreshToken(token);
+            return ResponseEntity.ok(refreshedToken);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Cannot refresh expired token");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token");
+        }
+    }
+
+    @GetMapping("/getUsers")
+    public ResponseEntity<List<UserInfo>> getAllUsers() {
+        List<UserInfo> users = userInfoService.getAllUsers();
+        users.forEach(user -> System.out.println("User: " + user.getName() + ", Roles: " + user.getRoles()));
+        return ResponseEntity.ok(users);
+    }
+
+
+    @GetMapping("/getUsers/{id}")
+   // @PreAuthorize("hasAuthority('USER_ROLES')")
+    public ResponseEntity<UserInfo> getUser(@PathVariable Integer id) {
+        UserInfo user = userInfoService.getUser(id);
+        return user != null ? ResponseEntity.ok(user) : ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    }
+
+    @GetMapping("/getUser/{name}")
+   // @PreAuthorize("hasAuthority('USER_ROLES')")
+    public ResponseEntity<UserInfo> getOneUser(@PathVariable String name) {
+        UserInfo user = userInfoService.getOneUser(name);
+        return user != null ? ResponseEntity.ok(user) : ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    }
+}
