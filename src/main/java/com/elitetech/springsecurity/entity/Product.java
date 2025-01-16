@@ -37,7 +37,7 @@ public class Product {
   
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    @JsonIgnoreProperties(value = {"products", "commandes"}) // Ignore produits et commandes dans UserInfo
+    @JsonIgnoreProperties(value = {"products", "commandes","auctions"}) // Ignore produits et commandes dans UserInfo
     private UserInfo user;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -48,7 +48,6 @@ public class Product {
     @JsonIgnoreProperties(value = {"products", "user"}) // Ignore produits et utilisateur dans Commande
     private Set<Commande> commandes;
     @OneToOne(mappedBy = "product", cascade = CascadeType.ALL)
-    @JsonIgnoreProperties("product")
     private Auction auction;
 
 

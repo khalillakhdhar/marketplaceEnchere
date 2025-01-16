@@ -38,7 +38,7 @@ public class Auction {
     private Product product;
 
     @ManyToOne
-    @JsonIgnoreProperties("auction")
+    @JsonIgnoreProperties({"auctions","products"})
     private UserInfo highestBidder;
 
 }

@@ -26,11 +26,13 @@ public class ProductDTO {
     @JsonIgnoreProperties("products")
     private CategoryDTO category; // L'objet CategoryDTO doit avoir un ID
 
-    @JsonIgnoreProperties({"products", "commandes"}) // Évite la boucle dans UserDTO
+    @JsonIgnoreProperties({"products", "commandes","auctions"}) // Évite la boucle dans UserDTO
     private UserDTO user;
 
     @JsonIgnoreProperties("products") // Évite la boucle dans OrderDTO
     private List<OrderDTO> commandes;
+    @JsonIgnoreProperties({"product"})
+
     private Auction auction;
 }
 
