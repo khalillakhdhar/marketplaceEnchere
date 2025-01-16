@@ -43,25 +43,25 @@ public class ProductServiceImp implements ProductService {
     @Override
     public List<ProductDTO> searchProducts(String name, Double minPrice, Double maxPrice, long categoryId) {
         return productRepository.findAll().stream()
-                .filter(product -> (name == null || product.getName().toLowerCase().contains(name.toLowerCase())) &&
-                                   (minPrice == null || product.getPrice() >= minPrice) &&
-                                   (maxPrice == null || product.getPrice() <= maxPrice) &&
+                .filter(product -> (name == "" || product.getName().toLowerCase().contains(name.toLowerCase())) &&
+                                   (minPrice == 0 || product.getPrice() >= minPrice) &&
+                                   (maxPrice == 0 || product.getPrice() <= maxPrice) &&
                                    (categoryId == 0 || (product.getCategory() != null && product.getCategory().getId() == categoryId)))
                 .map(ProductMapper::convertToDto)
                 .collect(Collectors.toList());
     }
-
     @Override
     public ProductDTO addProduct(ProductDTO productDTO, long userId) {
-        // Récupérer l'utilisateur
+        if (productDTO.getCategory() == null || productDTO.getCategory().getId() == 0) {
+            throw new IllegalArgumentException("Category ID is required");
+        }
+
         UserInfo owner = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        // Récupérer la catégorie
         Category category = categoryRepository.findById(productDTO.getCategory().getId())
                 .orElseThrow(() -> new IllegalArgumentException("Category not found"));
 
-        // Créer un nouveau produit
         Product product = new Product();
         product.setName(productDTO.getName());
         product.setDescription(productDTO.getDescription());
@@ -71,16 +71,14 @@ public class ProductServiceImp implements ProductService {
         product.setUser(owner);
         product.setCategory(category);
 
-        // Sauvegarder le produit
         Product savedProduct = productRepository.save(product);
 
-        // Créer une enchère associée au produit
         Auction auction = new Auction();
         auction.setProduct(savedProduct);
-        auction.setStartingPrice(product.getPrice()); // Prix initial basé sur le prix du produit
+        auction.setStartingPrice(product.getPrice());
         auction.setCurrentBid(product.getPrice());
         auction.setStartTime(LocalDateTime.now());
-        auction.setEndTime(LocalDateTime.now().plusDays(7)); // Durée par défaut de 7 jours
+        auction.setEndTime(LocalDateTime.now().plusDays(7));
         auctionRepository.save(auction);
 
         return ProductMapper.convertToDto(savedProduct);

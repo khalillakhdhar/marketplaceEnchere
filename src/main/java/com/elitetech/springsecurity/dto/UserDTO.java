@@ -5,6 +5,7 @@ package com.elitetech.springsecurity.dto;
 import java.util.List;
 import java.util.Set;
 
+import com.elitetech.springsecurity.entity.Auction;
 import com.elitetech.springsecurity.entity.Commande;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
@@ -26,6 +27,10 @@ public class UserDTO {
 
     @JsonIgnoreProperties({"user", "products"}) // Évite la boucle dans OrderDTO
     private List<OrderDTO> commandes;
+    @JsonIgnoreProperties(value = "highestBidder") // Ignore utilisateur et catégorie dans Product
+
+    private Set<Auction> auctions;
+
 }
 
 

@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.apache.catalina.User;
 
+import com.elitetech.springsecurity.entity.Auction;
 import com.elitetech.springsecurity.entity.UserInfo;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
@@ -22,13 +23,14 @@ public class ProductDTO {
     private String photo;
     private String description;
 
-    @JsonIgnoreProperties("products") // Évite la boucle dans CategoryDTO
-    private CategoryDTO category;
+    @JsonIgnoreProperties("products")
+    private CategoryDTO category; // L'objet CategoryDTO doit avoir un ID
 
     @JsonIgnoreProperties({"products", "commandes"}) // Évite la boucle dans UserDTO
     private UserDTO user;
 
     @JsonIgnoreProperties("products") // Évite la boucle dans OrderDTO
     private List<OrderDTO> commandes;
+    private Auction auction;
 }
 
