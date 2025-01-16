@@ -47,6 +47,9 @@ public class Product {
     @ManyToMany(mappedBy = "products", cascade = CascadeType.ALL)
     @JsonIgnoreProperties(value = {"products", "user"}) // Ignore produits et utilisateur dans Commande
     private Set<Commande> commandes;
-   
+    @OneToOne(mappedBy = "product", cascade = CascadeType.ALL)
+    @JsonIgnoreProperties("product")
+    private Auction auction;
+
 
 }

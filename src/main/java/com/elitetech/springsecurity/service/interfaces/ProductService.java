@@ -11,5 +11,7 @@ public interface ProductService {
 	    ProductDTO addProduct(ProductDTO productDTO, long userId);
 	    ProductDTO getProductById(long id);
 	    void deleteProduct(long id);
+	    public String placeBid(long productId, long userId, double bidAmount) ;
+
 	    //String placeBid(long productId, long userId, double bidAmount);
 }

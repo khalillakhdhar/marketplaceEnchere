@@ -1,10 +1,12 @@
 package com.elitetech.springsecurity.service;
 
 import com.elitetech.springsecurity.dto.ProductDTO;
+import com.elitetech.springsecurity.entity.Auction;
 import com.elitetech.springsecurity.entity.Category;
 import com.elitetech.springsecurity.entity.Product;
 import com.elitetech.springsecurity.entity.UserInfo;
 import com.elitetech.springsecurity.mapper.ProductMapper;
+import com.elitetech.springsecurity.repository.AuctionRepository;
 import com.elitetech.springsecurity.repository.CategoryRepository;
 import com.elitetech.springsecurity.repository.ProductRepository;
 import com.elitetech.springsecurity.repository.UserInfoRepository;
@@ -12,6 +14,7 @@ import com.elitetech.springsecurity.service.interfaces.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 @Service
@@ -24,6 +27,8 @@ public class ProductServiceImp implements ProductService {
     
     @Autowired
     private UserInfoRepository userRepository;
+    @Autowired
+    private AuctionRepository auctionRepository;
 
    
     @Override
@@ -63,14 +68,24 @@ public class ProductServiceImp implements ProductService {
         product.setPrice(productDTO.getPrice());
         product.setStock(productDTO.getStock());
         product.setPhoto(productDTO.getPhoto());
-       
         product.setUser(owner);
         product.setCategory(category);
 
         // Sauvegarder le produit
-        productRepository.save(product);
-        return ProductMapper.convertToDto(product);
+        Product savedProduct = productRepository.save(product);
+
+        // Créer une enchère associée au produit
+        Auction auction = new Auction();
+        auction.setProduct(savedProduct);
+        auction.setStartingPrice(product.getPrice()); // Prix initial basé sur le prix du produit
+        auction.setCurrentBid(product.getPrice());
+        auction.setStartTime(LocalDateTime.now());
+        auction.setEndTime(LocalDateTime.now().plusDays(7)); // Durée par défaut de 7 jours
+        auctionRepository.save(auction);
+
+        return ProductMapper.convertToDto(savedProduct);
     }
+
 
     @Override
     public ProductDTO getProductById(long id) {
@@ -82,6 +97,29 @@ public class ProductServiceImp implements ProductService {
     @Override
     public void deleteProduct(long id) {
         productRepository.deleteById(id);
+    }
+    public String placeBid(long productId, long userId, double bidAmount) {
+        // Récupérer l'enchère associée au produit
+        Auction auction = auctionRepository.findByProductId(productId)
+                .orElseThrow(() -> new IllegalArgumentException("Auction not found for product"));
+
+        // Vérifier si le montant de l'offre est supérieur à l'enchère actuelle
+        if (bidAmount <= auction.getCurrentBid()) {
+            return "Bid amount must be higher than the current bid";
+        }
+
+        // Récupérer l'utilisateur qui place l'enchère
+        UserInfo user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        // Mettre à jour l'enchère
+        auction.setCurrentBid(bidAmount);
+        auction.setHighestBidder(user);
+
+        // Sauvegarder l'enchère mise à jour
+        auctionRepository.save(auction);
+
+        return "Success";
     }
 
    

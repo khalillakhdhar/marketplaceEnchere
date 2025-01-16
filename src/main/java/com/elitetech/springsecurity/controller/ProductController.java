@@ -27,15 +27,17 @@ public class ProductController {
         ProductDTO newProduct = productService.addProduct(productDTO, userId);
         return ResponseEntity.ok(newProduct);
     }
-/*
     @PostMapping("/{productId}/bid")
-    public ResponseEntity<String> placeBid(@PathVariable long productId, @RequestParam long userId, @RequestParam double bidAmount) {
+    public ResponseEntity<String> placeBid(
+            @PathVariable long productId,
+            @RequestParam long userId,
+            @RequestParam double bidAmount) {
         String result = productService.placeBid(productId, userId, bidAmount);
         return result.equals("Success") 
                 ? ResponseEntity.ok("Bid placed successfully") 
                 : ResponseEntity.badRequest().body(result);
     }
-*/
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProduct(@PathVariable @Min(1) long id) {
         productService.deleteProduct(id);

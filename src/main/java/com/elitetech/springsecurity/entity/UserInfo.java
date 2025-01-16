@@ -38,5 +38,9 @@ public class UserInfo {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties(value = {"user", "category"}) // Ignore utilisateur et catégorie dans Product
     private Set<Product> products;
+    @OneToMany(mappedBy = "highestBidder", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties(value = "highestBidder") // Ignore utilisateur et catégorie dans Product
+
+    private Set<Auction> auctions;
 }
 
